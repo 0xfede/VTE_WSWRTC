@@ -5,6 +5,7 @@ var express = require('express')
 , words = require('./english.json')
 , _ = require('underscore')
 
+app.use(express.static(__dirname));
 app.get('/', function(req, res) {
   var _w = _.sample(words, 3);
   res.redirect('/' + _w[0] + '-' + _w[1] + '-' + _w[2]);
@@ -16,8 +17,11 @@ app.get('/:id', function(req, res) {
 io.on('connection', function(socket) {
   socket.roomId = socket.request._query.id;
   socket.join(socket.roomId);
-  socket.on('msg', function(data) {
-    socket.to(socket.roomId).emit('msg', data);
+  socket.on('sdp', function(data) {
+    socket.to(socket.roomId).emit('sdp', data);
+  });
+  socket.on('ice', function(data) {
+    socket.to(socket.roomId).emit('ice', data);
   });
 });
 

@@ -6,24 +6,91 @@
   <meta name="description" content="WebSockets & WebRTC">
   <script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
+  <script src="adapter.js"></script>
   <script>
   var id = "<%- id %>";
   var socket = io({ query: { id: id }});
-  socket.on('msg', function(data) {
-    $('#messages').append($('<li>').text(data));
+  
+  var pc = new RTCPeerConnection();
+  
+  var channels = {}
+  
+  function sendOffer() {
+    pc.createOffer(function(offer) {
+      pc.setLocalDescription(offer);
+      console.log('sending offer', offer);
+      socket.emit('sdp', offer.toJSON ? offer.toJSON() : offer);
+    }, function(err) {
+      alert(err);
+    });
+  }
+  function sendAnswer() {
+    pc.createAnswer(function(answer) {
+      pc.setLocalDescription(answer);
+      //console.log('sending answer', answer);
+      socket.emit('sdp', answer.toJSON ? answer.toJSON() : answer);
+    }, function(err) {
+      alert(err);
+    });
+  }
+  function addChannel(chan) {
+    channels[chan.label] = chan;
+    console.log('new channel', chan.label);
+    chan.onmessage = function(data) {
+      console.log('channel ' + chan.label, data);
+      $('#messages').append($('<li>').text(data.data));
+    }
+  }
+  
+  socket.on('sdp', function(data) {
+    $('#start').remove();
+    var sdp = new RTCSessionDescription(data);
+    pc.setRemoteDescription(sdp);
+    if (data.type == 'offer') {
+      console.log('got offer', sdp.sdp);
+      sendAnswer();
+    } else {
+      console.log('got answer', sdp.sdp);
+    }
   });
+  socket.on('ice', function(data) {
+    var ice = new RTCIceCandidate(data);
+    console.log('got ice', data);
+    try {
+      pc.addIceCandidate(ice);
+    } catch(e) { console.error(e) }
+  });
+
+  pc.onnegotiationneeded = sendOffer;
+  pc.onicecandidate = function(evt) {
+    var ice = evt.candidate;
+    if (ice) {
+      console.log('sending ice', ice);
+      socket.emit('ice', ice.toJSON ? ice.toJSON() : ice);
+    }
+  }
+  pc.ondatachannel = function(evt) {
+    var chan = evt.channel;
+    addChannel(chan);
+  }
+
   $(function() {
+    $('#start').click(function() {
+      var chan = pc.createDataChannel('chat');
+      addChannel(chan);
+    });
     $('form').submit(function() {
       var t = $('#msg').val();
       $('#msg').val('').focus();
       $('#msg').focus();
-      if (t) socket.emit('msg', t);
+      if (t) channels.chat.send(t);
       return false;
     });
   });
   </script>
 </head>
 <body>
+  <button id='start'>start</button>
   <form action="">
     <input id='msg' type='text' autocompletion=false>
     <button>send</button>
