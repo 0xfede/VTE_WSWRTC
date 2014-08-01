@@ -1,0 +1,27 @@
+{
+  "name": "VTE_WSWRTC",
+  "version": "1.0.0",
+  "description": "Vivocha Tech Evenings: WebSockets & WebRTC",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.7.2",
+    "socket.io": "^1.0.6",
+    "underscore": "^1.6.0",
+    "ejs": "^1.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/0xfede/VTE_WSWRTC.git"
+  },
+  "author": "Federico Pinna <fpinna@vivocha.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/0xfede/VTE_WSWRTC/issues"
+  },
+  "homepage": "https://github.com/0xfede/VTE_WSWRTC"
+}

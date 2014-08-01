@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>WebSockets & WebRTC</title>
+  <meta name="description" content="WebSockets & WebRTC">
+  <script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+  var socket = io();
+  socket.on('msg', function(data) {
+    $('#messages').append($('<li>').text(data));
+  });
+  $(function() {
+    $('form').submit(function() {
+      var t = $('#msg').val();
+      $('#msg').val('');
+      $('#msg').focus();
+      if (t) socket.emit('msg', t);
+      return false;
+    });
+  });
+  </script>
+</head>
+<body>
+  <form action="">
+    <input id='msg' type='text' autocompletion=false>
+    <button>send</button>
+  </form>
+  <p />
+  <ul id="messages">
+  </ul>
+</body>
+</html>
