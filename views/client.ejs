@@ -10,15 +10,13 @@
   <script>
   var id = "<%- id %>";
   var socket = io({ query: { id: id }});
-  
-  var pc = new RTCPeerConnection();
-  
+  var pc = RTCPeerConnection();
   var channels = {}
   
   function sendOffer() {
     pc.createOffer(function(offer) {
       pc.setLocalDescription(offer);
-      console.log('sending offer', offer);
+      //console.log('sending offer', offer);
       socket.emit('sdp', offer.toJSON ? offer.toJSON() : offer);
     }, function(err) {
       alert(err);
@@ -47,15 +45,15 @@
     var sdp = new RTCSessionDescription(data);
     pc.setRemoteDescription(sdp);
     if (data.type == 'offer') {
-      console.log('got offer', sdp.sdp);
+      //console.log('got offer', sdp);
       sendAnswer();
     } else {
-      console.log('got answer', sdp.sdp);
+      //console.log('got answer', sdp);
     }
   });
   socket.on('ice', function(data) {
     var ice = new RTCIceCandidate(data);
-    console.log('got ice', data);
+    //console.log('got ice', data);
     try {
       pc.addIceCandidate(ice);
     } catch(e) { console.error(e) }
@@ -65,7 +63,7 @@
   pc.onicecandidate = function(evt) {
     var ice = evt.candidate;
     if (ice) {
-      console.log('sending ice', ice);
+      //console.log('sending ice', ice);
       socket.emit('ice', ice.toJSON ? ice.toJSON() : ice);
     }
   }
@@ -73,12 +71,26 @@
     var chan = evt.channel;
     addChannel(chan);
   }
+  pc.onaddstream = function(evt) {
+    attachMediaStream($('#remoteVideo')[0], evt.stream);
+  }
 
   $(function() {
     $('#start').click(function() {
       var chan = pc.createDataChannel('chat');
       addChannel(chan);
     });
+    $('#startVideo').click(function() {
+      getUserMedia({ audio: true, video: true }, function(stream) {
+        console.log('got stream', stream);
+        attachMediaStream($('#localVideo')[0], stream);
+        pc.addStream(stream);
+      }, function(err) {
+        alert(err);
+      });
+    });
+
+
     $('form').submit(function() {
       var t = $('#msg').val();
       $('#msg').val('').focus();
@@ -90,7 +102,10 @@
   </script>
 </head>
 <body>
+  <video id='localVideo' autoplay mute></video>
+  <video id='remoteVideo' autoplay></video>
   <button id='start'>start</button>
+  <button id='startVideo'>start video</button>
   <form action="">
     <input id='msg' type='text' autocompletion=false>
     <button>send</button>
